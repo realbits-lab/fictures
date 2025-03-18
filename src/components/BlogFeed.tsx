@@ -21,7 +21,10 @@ export default function BlogFeed() {
         .order('created_at', { ascending: false })
         .range(page * 10, (page + 1) * 10 - 1);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       if (data) {
         setPosts(prevPosts => [...prevPosts, ...data]);
@@ -43,6 +46,14 @@ export default function BlogFeed() {
       fetchPosts();
     }
   }, [inView]);
+
+  if (posts.length === 0 && !loading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <p className="text-muted-foreground">No posts yet. Be the first to write something!</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 py-4">
