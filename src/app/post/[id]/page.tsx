@@ -50,7 +50,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const { data, error } = await supabase
-          .from('blogs')
+          .from('posts')
           .select('*')
           .eq('id', resolvedParams.id)
           .single();
@@ -81,7 +81,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     try {
       setIsDeleting(true);
       const { error } = await supabase
-        .from('blogs')
+        .from('posts')
         .delete()
         .eq('id', post.id)
         .eq('user_id', post.user_id); // Ensure only owner can delete

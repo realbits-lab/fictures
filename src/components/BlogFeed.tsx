@@ -49,7 +49,7 @@ export default function BlogFeed() {
         setCurrentUserId(session?.user?.id || null);
 
         const { data, error } = await supabase
-          .from('blogs')
+          .from('posts')
           .select('*')
           .order('created_at', { ascending: false });
 
