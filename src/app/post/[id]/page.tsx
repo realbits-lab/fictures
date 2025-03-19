@@ -8,6 +8,34 @@ import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
+import remarkGfm from 'remark-gfm';
+
+// Custom schema for rehype-sanitize to allow specific HTML elements and attributes
+const schema = {
+  ...rehypeSanitize.defaults,
+  attributes: {
+    ...rehypeSanitize.defaults.attributes,
+    img: [...(rehypeSanitize.defaults.attributes.img || []), ['loading']],
+    iframe: [
+      ['src'],
+      ['title'],
+      ['width'],
+      ['height'],
+      ['allowfullscreen'],
+      ['allow']
+    ]
+  },
+  tagNames: [
+    ...(rehypeSanitize.defaults.tagNames || []),
+    'iframe',
+    'audio',
+    'video',
+    'source'
+  ]
+};
 
 export default function PostPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -22,7 +50,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const { data, error } = await supabase
-          .from('posts')
+          .from('blogs')
           .select('*')
           .eq('id', resolvedParams.id)
           .single();
@@ -53,7 +81,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     try {
       setIsDeleting(true);
       const { error } = await supabase
-        .from('posts')
+        .from('blogs')
         .delete()
         .eq('id', post.id)
         .eq('user_id', post.user_id); // Ensure only owner can delete
@@ -136,7 +164,30 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-base whitespace-pre-wrap">{post.content}</p>
+          <div className="prose prose-sm sm:prose lg:prose-lg dark:prose-invert max-w-none">
+            <ReactMarkdown
+              rehypePlugins={[
+                [rehypeRaw],
+                [rehypeSanitize, schema],
+              ]}
+              remarkPlugins={[remarkGfm]}
+              components={{
+                img: ({ node, ...props }) => (
+                  <img style={{ maxWidth: '100%', height: 'auto' }} loading="lazy" {...props} />
+                ),
+                iframe: ({ node, ...props }) => (
+                  <div className="relative pt-[56.25%]">
+                    <iframe
+                      className="absolute top-0 left-0 w-full h-full"
+                      {...props}
+                    />
+                  </div>
+                ),
+              }}
+            >
+              {post.content}
+            </ReactMarkdown>
+          </div>
         </CardContent>
       </Card>
     </main>

@@ -1,71 +1,56 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase, type Post } from '@/lib/supabase';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { formatDistanceToNow } from 'date-fns';
-import { useInView } from 'react-intersection-observer';
 import { Button } from '@/components/ui/button';
 import { Pencil } from 'lucide-react';
+import { mockPosts } from '@/lib/mock-posts';
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
+import remarkGfm from 'remark-gfm';
+
+// Custom schema for rehype-sanitize to allow specific HTML elements and attributes
+const schema = {
+  ...defaultSchema,
+  attributes: {
+    ...defaultSchema.attributes,
+    img: [...(defaultSchema.attributes?.img || []), ['loading']],
+    iframe: [
+      ['src'],
+      ['title'],
+      ['width'],
+      ['height'],
+      ['allowfullscreen'],
+      ['allow']
+    ]
+  },
+  tagNames: [
+    ...(defaultSchema.tagNames || []),
+    'iframe',
+    'audio',
+    'video',
+    'source'
+  ]
+};
 
 export default function BlogFeed() {
   const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
-  const { ref, inView } = useInView();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
-    // Get the user ID from localStorage
     const userId = localStorage.getItem('userId');
     setCurrentUserId(userId);
+    
+    // Use mock posts for demonstration
+    setPosts(mockPosts);
+    setLoading(false);
   }, []);
-
-  const fetchPosts = async (pageNumber: number) => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .range(pageNumber * 10, (pageNumber + 1) * 10 - 1);
-
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
-
-      if (data) {
-        if (pageNumber === 0) {
-          setPosts(data);
-        } else {
-          setPosts(prevPosts => [...prevPosts, ...data]);
-        }
-        setHasMore(data.length === 10);
-        setPage(pageNumber + 1);
-      }
-    } catch (error) {
-      console.error('Error fetching posts:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Initial fetch
-  useEffect(() => {
-    setPage(0);
-    fetchPosts(0);
-  }, []);
-
-  // Handle infinite scroll
-  useEffect(() => {
-    if (inView && !loading && hasMore) {
-      fetchPosts(page);
-    }
-  }, [inView, loading, hasMore, page]);
 
   const handleCardClick = (post: Post) => {
     if (post.id) {
@@ -74,7 +59,7 @@ export default function BlogFeed() {
   };
 
   const handleEditClick = (e: React.MouseEvent, postId: string) => {
-    e.stopPropagation(); // Prevent card click event
+    e.stopPropagation();
     if (postId) {
       router.push(`/post/${encodeURIComponent(postId)}/edit`);
     }
@@ -121,7 +106,33 @@ export default function BlogFeed() {
             <h2 className="text-lg font-semibold">{post.title}</h2>
           </CardHeader>
           <CardContent>
-            <p className="text-sm whitespace-pre-wrap line-clamp-3">{post.content}</p>
+            <div className="prose prose-sm dark:prose-invert max-w-none line-clamp-3">
+              <ReactMarkdown
+                rehypePlugins={[
+                  [rehypeRaw],
+                  [rehypeSanitize, schema],
+                ]}
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  img: ({ node, ...props }) => (
+                    <img style={{ maxWidth: '100%', height: '100px', objectFit: 'cover' }} loading="lazy" {...props} />
+                  ),
+                  iframe: ({ node, ...props }) => (
+                    <div className="relative" style={{ height: '100px' }}>
+                      <iframe
+                        className="absolute top-0 left-0 w-full h-full"
+                        {...props}
+                      />
+                    </div>
+                  ),
+                  audio: ({ node, ...props }) => (
+                    <audio controls style={{ height: '40px', width: '100%' }} {...props} />
+                  ),
+                }}
+              >
+                {post.content}
+              </ReactMarkdown>
+            </div>
           </CardContent>
         </Card>
       ))}
@@ -130,7 +141,6 @@ export default function BlogFeed() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       )}
-      <div ref={ref} className="h-10" />
     </div>
   );
 } 
