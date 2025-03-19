@@ -21,8 +21,9 @@ export default function EditPost({ params }: { params: Promise<{ id: string }> }
     const fetchPost = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        
         const { data, error } = await supabase
-          .from('posts')
+          .from('blogs')
           .select('*')
           .eq('id', resolvedParams.id)
           .single();
@@ -38,8 +39,7 @@ export default function EditPost({ params }: { params: Promise<{ id: string }> }
 
         setTitle(data.title);
         setContent(data.content);
-      } catch (error) {
-        console.error('Error fetching post:', error);
+      } catch {
         router.push('/');
       } finally {
         setLoading(false);
@@ -63,7 +63,7 @@ export default function EditPost({ params }: { params: Promise<{ id: string }> }
       }
 
       const { error } = await supabase
-        .from('posts')
+        .from('blogs')
         .update({
           title: title.trim(),
           content: content.trim(),
@@ -72,7 +72,6 @@ export default function EditPost({ params }: { params: Promise<{ id: string }> }
         .eq('user_id', session.user.id);
 
       if (error) {
-        console.error('Supabase error:', error);
         toast.error(`Failed to update post: ${error.message}`);
         return;
       }
@@ -80,7 +79,6 @@ export default function EditPost({ params }: { params: Promise<{ id: string }> }
       toast.success('Post updated successfully');
       router.push(`/post/${resolvedParams.id}`);
     } catch (error) {
-      console.error('Error updating post:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       toast.error(`Failed to update post: ${errorMessage}`);
     } finally {
@@ -100,50 +98,56 @@ export default function EditPost({ params }: { params: Promise<{ id: string }> }
 
   return (
     <main className="min-h-screen p-4 max-w-lg mx-auto">
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-4 border-b mb-4">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.back()}
-            className="shrink-0"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-2xl font-bold">Edit Post</h1>
-        </div>
+      <div className="flex items-center gap-4 mb-8">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => router.back()}
+          className="rounded-full"
+        >
+          <ArrowLeft className="h-6 w-6" />
+        </Button>
+        <h1 className="text-2xl font-bold">Edit Post</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
+          <label htmlFor="title" className="text-sm font-medium">
+            Title
+          </label>
           <Input
-            placeholder="Title"
+            id="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            maxLength={100}
+            placeholder="Enter post title"
             required
           />
         </div>
+
         <div className="space-y-2">
+          <label htmlFor="content" className="text-sm font-medium">
+            Content
+          </label>
           <Textarea
-            placeholder="Write your post..."
+            id="content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            placeholder="Write your post content"
             className="min-h-[200px]"
-            maxLength={2000}
             required
           />
         </div>
-        <div className="flex justify-end gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.back()}
-          >
-            Cancel
-          </Button>
+
+        <div className="flex justify-end">
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
+            {isSubmitting ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Saving...
+              </>
+            ) : (
+              'Save Changes'
+            )}
           </Button>
         </div>
       </form>
