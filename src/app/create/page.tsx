@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,27 +15,34 @@ export default function CreatePost() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const ensureAuthenticatedUser = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user.id) {
+        return session.user.id;
+      }
+      
       const { data: { session: newSession }, error } = await supabase.auth.signInAnonymously();
       if (error) throw error;
-      return newSession?.user.id;
+      if (!newSession?.user.id) throw new Error('Failed to create anonymous user');
+      
+      return newSession.user.id;
+    } catch (error) {
+      console.error('Authentication error:', error);
+      throw error;
     }
-    return session.user.id;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isSubmitting) return; // Prevent multiple submissions
     if (!title.trim() || !content.trim()) return;
 
     try {
       setIsSubmitting(true);
       
-      // Ensure we have an authenticated user
       const userId = await ensureAuthenticatedUser();
-      if (!userId) throw new Error('Failed to authenticate user');
       
-      // Create the post
       const { error } = await supabase.from('posts').insert({
         title: title.trim(),
         content: content.trim(),
@@ -43,13 +50,13 @@ export default function CreatePost() {
       });
 
       if (error) throw error;
-      
+
+      // Only navigate if post creation was successful
       router.push('/');
       router.refresh();
     } catch (error) {
       console.error('Error creating post:', error);
-    } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Reset submit state on error
     }
   };
 
@@ -71,6 +78,7 @@ export default function CreatePost() {
             onChange={(e) => setTitle(e.target.value)}
             maxLength={100}
             required
+            disabled={isSubmitting}
           />
         </div>
         <div className="space-y-2">
@@ -81,11 +89,12 @@ export default function CreatePost() {
             className="min-h-[200px]"
             maxLength={2000}
             required
+            disabled={isSubmitting}
           />
         </div>
         <div className="flex justify-end gap-2">
           <Link href="/">
-            <Button variant="outline" type="button">Cancel</Button>
+            <Button variant="outline" type="button" disabled={isSubmitting}>Cancel</Button>
           </Link>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Posting...' : 'Post'}
