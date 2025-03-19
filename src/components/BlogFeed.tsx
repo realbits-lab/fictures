@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase, type Post } from '@/lib/supabase';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { formatDistanceToNow } from 'date-fns';
 import { useInView } from 'react-intersection-observer';
 
 export default function BlogFeed() {
+  const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -58,7 +60,11 @@ export default function BlogFeed() {
   return (
     <div className="space-y-4 py-4">
       {posts.map((post) => (
-        <Card key={post.id} className="w-full">
+        <Card 
+          key={post.id} 
+          className="w-full cursor-pointer transition-all hover:shadow-md"
+          onClick={() => router.push(`/post/${post.id}`)}
+        >
           <CardHeader className="pb-2">
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">
@@ -71,7 +77,7 @@ export default function BlogFeed() {
             <h2 className="text-lg font-semibold">{post.title}</h2>
           </CardHeader>
           <CardContent>
-            <p className="text-sm whitespace-pre-wrap">{post.content}</p>
+            <p className="text-sm whitespace-pre-wrap line-clamp-3">{post.content}</p>
           </CardContent>
         </Card>
       ))}
