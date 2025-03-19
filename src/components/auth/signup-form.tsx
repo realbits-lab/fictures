@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth-context';
+import { generatePassword } from '@/lib/password-utils';
 
 export function SignUpForm() {
   const [email, setEmail] = useState('');
@@ -30,6 +31,12 @@ export function SignUpForm() {
     }
   };
 
+  const handleGeneratePassword = () => {
+    const newPassword = generatePassword();
+    setPassword(newPassword);
+    toast.success('Password generated successfully!');
+  };
+
   return (
     <Card className="w-[400px] mx-auto">
       <CardHeader>
@@ -48,13 +55,26 @@ export function SignUpForm() {
             />
           </div>
           <div className="space-y-2">
-            <Input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="flex gap-2">
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleGeneratePassword}
+              >
+                Generate
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Password must be at least 8 characters with lowercase, uppercase, digits and symbols.
+            </p>
           </div>
         </CardContent>
         <CardFooter>
