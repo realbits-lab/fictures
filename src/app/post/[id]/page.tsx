@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase, type Post } from '@/lib/supabase';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -8,11 +8,12 @@ import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Pencil } from 'lucide-react';
 
-export default function PostPage({ params }: { params: { id: string } }) {
+export default function PostPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
+  const resolvedParams = use(params);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -20,7 +21,7 @@ export default function PostPage({ params }: { params: { id: string } }) {
         const { data, error } = await supabase
           .from('posts')
           .select('*')
-          .eq('id', params.id)
+          .eq('id', resolvedParams.id)
           .single();
 
         if (error) throw error;
@@ -38,7 +39,7 @@ export default function PostPage({ params }: { params: { id: string } }) {
     };
 
     fetchPost();
-  }, [params.id, router]);
+  }, [resolvedParams.id, router]);
 
   if (loading) {
     return (

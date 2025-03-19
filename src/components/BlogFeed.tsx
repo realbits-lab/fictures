@@ -59,12 +59,16 @@ export default function BlogFeed() {
   }, [inView]);
 
   const handleCardClick = (post: Post) => {
-    router.push(`/post/${post.id}`);
+    if (post.id) {
+      router.push(`/post/${encodeURIComponent(post.id)}`);
+    }
   };
 
   const handleEditClick = (e: React.MouseEvent, postId: string) => {
     e.stopPropagation(); // Prevent card click event
-    router.push(`/post/${postId}/edit`);
+    if (postId) {
+      router.push(`/post/${encodeURIComponent(postId)}/edit`);
+    }
   };
 
   if (posts.length === 0 && !loading) {
