@@ -1,12 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase';
-import { v4 as uuidv4 } from 'uuid';
 import Link from 'next/link';
 
 export default function CreatePost() {
@@ -15,10 +14,14 @@ export default function CreatePost() {
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const signInAnonymously = async () => {
-    const { data, error } = await supabase.auth.signInAnonymously();
-    if (error) throw error;
-    return data.user?.id;
+  const ensureAuthenticatedUser = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      const { data: { session: newSession }, error } = await supabase.auth.signInAnonymously();
+      if (error) throw error;
+      return newSession?.user.id;
+    }
+    return session.user.id;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,13 +31,9 @@ export default function CreatePost() {
     try {
       setIsSubmitting(true);
       
-      // Get or create user ID
-      let userId = localStorage.getItem('userId');
-      if (!userId) {
-        userId = await signInAnonymously();
-        if (!userId) throw new Error('Failed to create anonymous user');
-        localStorage.setItem('userId', userId);
-      }
+      // Ensure we have an authenticated user
+      const userId = await ensureAuthenticatedUser();
+      if (!userId) throw new Error('Failed to authenticate user');
       
       // Create the post
       const { error } = await supabase.from('posts').insert({
