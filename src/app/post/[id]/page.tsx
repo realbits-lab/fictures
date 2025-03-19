@@ -184,7 +184,15 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
                   </div>
                 ),
                 audio: ({ node, ...props }) => (
-                  <audio controls style={{ width: '100%' }} {...props} />
+                  <div className="my-4">
+                    <audio
+                      controls
+                      preload="metadata"
+                      style={{ width: '100%' }}
+                      className="rounded-lg shadow-sm"
+                      {...props}
+                    />
+                  </div>
                 ),
               }}
             >

@@ -117,7 +117,15 @@ export default function BlogFeed() {
                     </div>
                   ),
                   audio: ({ node, ...props }) => (
-                    <audio controls style={{ height: '40px', width: '100%' }} {...props} />
+                    <div className="my-4">
+                      <audio
+                        controls
+                        preload="metadata"
+                        style={{ width: '100%' }}
+                        className="rounded-lg shadow-sm"
+                        {...props}
+                      />
+                    </div>
                   ),
                 }}
               >
