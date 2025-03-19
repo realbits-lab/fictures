@@ -71,13 +71,18 @@ export default function EditPost({ params }: { params: Promise<{ id: string }> }
         .eq('id', resolvedParams.id)
         .eq('user_id', session.user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        toast.error(`Failed to update post: ${error.message}`);
+        return;
+      }
       
       toast.success('Post updated successfully');
       router.push(`/post/${resolvedParams.id}`);
     } catch (error) {
       console.error('Error updating post:', error);
-      toast.error('Failed to update post');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to update post: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }
