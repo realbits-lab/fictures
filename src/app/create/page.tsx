@@ -15,16 +15,10 @@ export default function CreatePost() {
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const createAnonymousUser = async (userId: string) => {
-    const { error } = await supabase.from('users').insert({
-      id: userId,
-      is_anonymous: true,
-      is_sso_user: false,
-    });
-    
-    if (error && error.code !== '23505') { // Ignore unique violation errors
-      throw error;
-    }
+  const signInAnonymously = async () => {
+    const { data, error } = await supabase.auth.signInAnonymously();
+    if (error) throw error;
+    return data.user?.id;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,12 +31,10 @@ export default function CreatePost() {
       // Get or create user ID
       let userId = localStorage.getItem('userId');
       if (!userId) {
-        userId = uuidv4();
+        userId = await signInAnonymously();
+        if (!userId) throw new Error('Failed to create anonymous user');
         localStorage.setItem('userId', userId);
       }
-
-      // Ensure anonymous user exists
-      await createAnonymousUser(userId);
       
       // Create the post
       const { error } = await supabase.from('posts').insert({
