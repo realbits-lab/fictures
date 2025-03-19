@@ -15,6 +15,18 @@ export default function CreatePost() {
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const createAnonymousUser = async (userId: string) => {
+    const { error } = await supabase.from('users').insert({
+      id: userId,
+      is_anonymous: true,
+      is_sso_user: false,
+    });
+    
+    if (error && error.code !== '23505') { // Ignore unique violation errors
+      throw error;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
@@ -28,7 +40,11 @@ export default function CreatePost() {
         userId = uuidv4();
         localStorage.setItem('userId', userId);
       }
+
+      // Ensure anonymous user exists
+      await createAnonymousUser(userId);
       
+      // Create the post
       const { error } = await supabase.from('posts').insert({
         title: title.trim(),
         content: content.trim(),
