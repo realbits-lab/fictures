@@ -22,17 +22,17 @@ export default function CreatePost() {
     try {
       setIsSubmitting(true);
       
-      // Get or create anonymous ID
-      let anonymousId = localStorage.getItem('anonymousId');
-      if (!anonymousId) {
-        anonymousId = uuidv4();
-        localStorage.setItem('anonymousId', anonymousId);
+      // Get or create user ID
+      let userId = localStorage.getItem('userId');
+      if (!userId) {
+        userId = uuidv4();
+        localStorage.setItem('userId', userId);
       }
       
       const { error } = await supabase.from('posts').insert({
         title: title.trim(),
         content: content.trim(),
-        anonymous_author_id: anonymousId,
+        user_id: userId,
       });
 
       if (error) throw error;

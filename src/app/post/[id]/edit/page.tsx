@@ -28,8 +28,8 @@ export default function EditPost({ params }: { params: { id: string } }) {
         if (error) throw error;
         
         // Verify ownership
-        const anonymousId = localStorage.getItem('anonymousId');
-        if (!anonymousId || data.anonymous_author_id !== anonymousId) {
+        const userId = localStorage.getItem('userId');
+        if (!userId || data.user_id !== userId) {
           router.push('/');
           return;
         }
@@ -61,7 +61,7 @@ export default function EditPost({ params }: { params: { id: string } }) {
           content: content.trim(),
         })
         .eq('id', params.id)
-        .eq('anonymous_author_id', localStorage.getItem('anonymousId'));
+        .eq('user_id', localStorage.getItem('userId'));
 
       if (error) throw error;
       

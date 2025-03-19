@@ -10,5 +10,5 @@ export type Post = {
   title: string;
   content: string;
   created_at: string;
-  anonymous_author_id: string;
+  user_id: string;
 }; 

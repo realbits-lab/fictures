@@ -27,8 +27,8 @@ export default function PostPage({ params }: { params: { id: string } }) {
         setPost(data);
 
         // Check if current user is the owner
-        const anonymousId = localStorage.getItem('anonymousId');
-        setIsOwner(anonymousId === data.anonymous_author_id);
+        const userId = localStorage.getItem('userId');
+        setIsOwner(userId === data.user_id);
       } catch (error) {
         console.error('Error fetching post:', error);
         router.push('/');
@@ -85,7 +85,7 @@ export default function PostPage({ params }: { params: { id: string } }) {
         <CardHeader className="pb-2">
           <div className="flex justify-between items-center">
             <span className="text-sm text-muted-foreground">
-              Anonymous #{post.anonymous_author_id.slice(0, 8)}
+              Anonymous #{post.user_id.slice(0, 8)}
             </span>
             <span className="text-xs text-muted-foreground">
               {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}

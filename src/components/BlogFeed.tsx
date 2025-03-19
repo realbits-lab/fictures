@@ -15,12 +15,12 @@ export default function BlogFeed() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const { ref, inView } = useInView();
-  const [currentUserAnonymousId, setCurrentUserAnonymousId] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get the anonymous ID from localStorage
-    const anonymousId = localStorage.getItem('anonymousId');
-    setCurrentUserAnonymousId(anonymousId);
+    // Get the user ID from localStorage
+    const userId = localStorage.getItem('userId');
+    setCurrentUserId(userId);
   }, []);
 
   const fetchPosts = async () => {
@@ -87,9 +87,9 @@ export default function BlogFeed() {
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">
-                  Anonymous #{post.anonymous_author_id.slice(0, 8)}
+                  Anonymous #{post.user_id.slice(0, 8)}
                 </span>
-                {currentUserAnonymousId === post.anonymous_author_id && (
+                {currentUserId === post.user_id && (
                   <Button
                     variant="ghost"
                     size="sm"
