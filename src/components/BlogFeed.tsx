@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Pencil } from 'lucide-react';
-import { mockPosts } from '@/lib/mock-posts';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
@@ -44,12 +43,26 @@ export default function BlogFeed() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const userId = localStorage.getItem('userId');
-    setCurrentUserId(userId);
-    
-    // Use mock posts for demonstration
-    setPosts(mockPosts);
-    setLoading(false);
+    const fetchPosts = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setCurrentUserId(session?.user?.id || null);
+
+        const { data, error } = await supabase
+          .from('blogs')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setPosts(data || []);
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPosts();
   }, []);
 
   const handleCardClick = (post: Post) => {

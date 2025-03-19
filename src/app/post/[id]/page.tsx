@@ -10,15 +10,15 @@ import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
-import rehypeSanitize from 'rehype-sanitize';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import remarkGfm from 'remark-gfm';
 
 // Custom schema for rehype-sanitize to allow specific HTML elements and attributes
 const schema = {
-  ...rehypeSanitize.defaults,
+  ...defaultSchema,
   attributes: {
-    ...rehypeSanitize.defaults.attributes,
-    img: [...(rehypeSanitize.defaults.attributes.img || []), ['loading']],
+    ...defaultSchema.attributes,
+    img: [...(defaultSchema.attributes?.img || []), ['loading']],
     iframe: [
       ['src'],
       ['title'],
@@ -29,7 +29,7 @@ const schema = {
     ]
   },
   tagNames: [
-    ...(rehypeSanitize.defaults.tagNames || []),
+    ...(defaultSchema.tagNames || []),
     'iframe',
     'audio',
     'video',
@@ -182,6 +182,9 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
                       {...props}
                     />
                   </div>
+                ),
+                audio: ({ node, ...props }) => (
+                  <audio controls style={{ width: '100%' }} {...props} />
                 ),
               }}
             >
