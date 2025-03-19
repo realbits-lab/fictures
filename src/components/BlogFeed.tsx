@@ -16,11 +16,7 @@ export default function BlogFeed() {
   const [page, setPage] = useState(0);
   const { ref, inView } = useInView();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-
-  const resetPosts = useCallback(() => {
-    setPosts([]);
-    setPage(0);
-  }, []);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
     // Get the user ID from localStorage
@@ -28,14 +24,14 @@ export default function BlogFeed() {
     setCurrentUserId(userId);
   }, []);
 
-  const fetchPosts = async () => {
+  const fetchPosts = async (pageNumber: number) => {
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('posts')
         .select('*')
         .order('created_at', { ascending: false })
-        .range(page * 10, (page + 1) * 10 - 1);
+        .range(pageNumber * 10, (pageNumber + 1) * 10 - 1);
 
       if (error) {
         console.error('Supabase error:', error);
@@ -43,8 +39,13 @@ export default function BlogFeed() {
       }
 
       if (data) {
-        setPosts(prevPosts => [...prevPosts, ...data]);
-        setPage(prevPage => prevPage + 1);
+        if (pageNumber === 0) {
+          setPosts(data);
+        } else {
+          setPosts(prevPosts => [...prevPosts, ...data]);
+        }
+        setHasMore(data.length === 10);
+        setPage(pageNumber + 1);
       }
     } catch (error) {
       console.error('Error fetching posts:', error);
@@ -53,23 +54,18 @@ export default function BlogFeed() {
     }
   };
 
+  // Initial fetch
   useEffect(() => {
-    resetPosts(); // Reset posts when component mounts
-    fetchPosts();
-    
-    // Add event listener for route changes
-    window.addEventListener('popstate', resetPosts);
-    
-    return () => {
-      window.removeEventListener('popstate', resetPosts);
-    };
-  }, [resetPosts]);
+    setPage(0);
+    fetchPosts(0);
+  }, []);
 
+  // Handle infinite scroll
   useEffect(() => {
-    if (inView && posts.length > 0) {
-      fetchPosts();
+    if (inView && !loading && hasMore) {
+      fetchPosts(page);
     }
-  }, [inView]);
+  }, [inView, loading, hasMore, page]);
 
   const handleCardClick = (post: Post) => {
     if (post.id) {
@@ -96,7 +92,7 @@ export default function BlogFeed() {
     <div className="space-y-4 py-4">
       {posts.map((post) => (
         <Card 
-          key={post.id} 
+          key={`${post.id}-${post.created_at}`}
           className="w-full cursor-pointer transition-all hover:shadow-md"
           onClick={() => handleCardClick(post)}
         >
