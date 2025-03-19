@@ -53,7 +53,7 @@ export default function BlogFeed() {
   }, []);
 
   useEffect(() => {
-    if (inView) {
+    if (inView && posts.length > 0) {
       fetchPosts();
     }
   }, [inView]);
