@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase, type Post } from '@/lib/supabase';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -16,6 +16,11 @@ export default function BlogFeed() {
   const [page, setPage] = useState(0);
   const { ref, inView } = useInView();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  const resetPosts = useCallback(() => {
+    setPosts([]);
+    setPage(0);
+  }, []);
 
   useEffect(() => {
     // Get the user ID from localStorage
@@ -49,8 +54,16 @@ export default function BlogFeed() {
   };
 
   useEffect(() => {
+    resetPosts(); // Reset posts when component mounts
     fetchPosts();
-  }, []);
+    
+    // Add event listener for route changes
+    window.addEventListener('popstate', resetPosts);
+    
+    return () => {
+      window.removeEventListener('popstate', resetPosts);
+    };
+  }, [resetPosts]);
 
   useEffect(() => {
     if (inView && posts.length > 0) {
