@@ -21,7 +21,13 @@ export default function CreatePost() {
 
     try {
       setIsSubmitting(true);
-      const anonymousId = uuidv4();
+      
+      // Get or create anonymous ID
+      let anonymousId = localStorage.getItem('anonymousId');
+      if (!anonymousId) {
+        anonymousId = uuidv4();
+        localStorage.setItem('anonymousId', anonymousId);
+      }
       
       const { error } = await supabase.from('posts').insert({
         title: title.trim(),

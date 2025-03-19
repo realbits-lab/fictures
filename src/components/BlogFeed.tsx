@@ -6,6 +6,8 @@ import { supabase, type Post } from '@/lib/supabase';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { formatDistanceToNow } from 'date-fns';
 import { useInView } from 'react-intersection-observer';
+import { Button } from '@/components/ui/button';
+import { Pencil } from 'lucide-react';
 
 export default function BlogFeed() {
   const router = useRouter();
@@ -13,6 +15,13 @@ export default function BlogFeed() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const { ref, inView } = useInView();
+  const [currentUserAnonymousId, setCurrentUserAnonymousId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Get the anonymous ID from localStorage
+    const anonymousId = localStorage.getItem('anonymousId');
+    setCurrentUserAnonymousId(anonymousId);
+  }, []);
 
   const fetchPosts = async () => {
     try {
@@ -49,6 +58,15 @@ export default function BlogFeed() {
     }
   }, [inView]);
 
+  const handleCardClick = (post: Post) => {
+    router.push(`/post/${post.id}`);
+  };
+
+  const handleEditClick = (e: React.MouseEvent, postId: string) => {
+    e.stopPropagation(); // Prevent card click event
+    router.push(`/post/${postId}/edit`);
+  };
+
   if (posts.length === 0 && !loading) {
     return (
       <div className="flex justify-center items-center py-8">
@@ -63,13 +81,26 @@ export default function BlogFeed() {
         <Card 
           key={post.id} 
           className="w-full cursor-pointer transition-all hover:shadow-md"
-          onClick={() => router.push(`/post/${post.id}`)}
+          onClick={() => handleCardClick(post)}
         >
           <CardHeader className="pb-2">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">
-                Anonymous #{post.anonymous_author_id.slice(0, 8)}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  Anonymous #{post.anonymous_author_id.slice(0, 8)}
+                </span>
+                {currentUserAnonymousId === post.anonymous_author_id && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2"
+                    onClick={(e) => handleEditClick(e, post.id)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    <span className="ml-1">Edit</span>
+                  </Button>
+                )}
+              </div>
               <span className="text-xs text-muted-foreground">
                 {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
               </span>

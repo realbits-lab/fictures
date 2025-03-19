@@ -6,12 +6,13 @@ import { supabase, type Post } from '@/lib/supabase';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Pencil } from 'lucide-react';
 
 export default function PostPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -24,6 +25,10 @@ export default function PostPage({ params }: { params: { id: string } }) {
 
         if (error) throw error;
         setPost(data);
+
+        // Check if current user is the owner
+        const anonymousId = localStorage.getItem('anonymousId');
+        setIsOwner(anonymousId === data.anonymous_author_id);
       } catch (error) {
         console.error('Error fetching post:', error);
         router.push('/');
@@ -61,7 +66,18 @@ export default function PostPage({ params }: { params: { id: string } }) {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-2xl font-bold truncate">{post.title}</h1>
+          <h1 className="text-2xl font-bold truncate flex-1">{post.title}</h1>
+          {isOwner && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(`/post/${post.id}/edit`)}
+              className="shrink-0"
+            >
+              <Pencil className="h-4 w-4 mr-1" />
+              Edit Post
+            </Button>
+          )}
         </div>
       </div>
 
