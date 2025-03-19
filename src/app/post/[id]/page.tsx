@@ -6,18 +6,21 @@ import { supabase, type Post } from '@/lib/supabase';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Pencil } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function PostPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const resolvedParams = use(params);
 
   useEffect(() => {
     const fetchPost = async () => {
       try {
+        const { data: { session } } = await supabase.auth.getSession();
         const { data, error } = await supabase
           .from('posts')
           .select('*')
@@ -28,8 +31,9 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
         setPost(data);
 
         // Check if current user is the owner
-        const userId = localStorage.getItem('userId');
-        setIsOwner(userId === data.user_id);
+        if (session?.user) {
+          setIsOwner(session.user.id === data.user_id);
+        }
       } catch (error) {
         console.error('Error fetching post:', error);
         router.push('/');
@@ -40,6 +44,32 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
 
     fetchPost();
   }, [resolvedParams.id, router]);
+
+  const handleDelete = async () => {
+    if (!post || !window.confirm('Are you sure you want to delete this post?')) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', post.id)
+        .eq('user_id', post.user_id); // Ensure only owner can delete
+
+      if (error) throw error;
+
+      toast.success('Post deleted successfully');
+      router.push('/');
+      router.refresh();
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      toast.error('Failed to delete post');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -69,15 +99,27 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
           </Button>
           <h1 className="text-2xl font-bold truncate flex-1">{post.title}</h1>
           {isOwner && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push(`/post/${post.id}/edit`)}
-              className="shrink-0"
-            >
-              <Pencil className="h-4 w-4 mr-1" />
-              Edit Post
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push(`/post/${post.id}/edit`)}
+                className="shrink-0"
+              >
+                <Pencil className="h-4 w-4 mr-1" />
+                Edit
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="shrink-0"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </Button>
+            </div>
           )}
         </div>
       </div>

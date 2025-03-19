@@ -1,35 +1,37 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase';
-import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 
-export default function EditPost({ params }: { params: { id: string } }) {
+export default function EditPost({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const resolvedParams = use(params);
 
   useEffect(() => {
     const fetchPost = async () => {
       try {
+        const { data: { session } } = await supabase.auth.getSession();
         const { data, error } = await supabase
           .from('posts')
           .select('*')
-          .eq('id', params.id)
+          .eq('id', resolvedParams.id)
           .single();
 
         if (error) throw error;
         
         // Verify ownership
-        const userId = localStorage.getItem('userId');
-        if (!userId || data.user_id !== userId) {
+        if (!session?.user || data.user_id !== session.user.id) {
+          toast.error('You do not have permission to edit this post');
           router.push('/');
           return;
         }
@@ -45,7 +47,7 @@ export default function EditPost({ params }: { params: { id: string } }) {
     };
 
     fetchPost();
-  }, [params.id, router]);
+  }, [resolvedParams.id, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,20 +56,28 @@ export default function EditPost({ params }: { params: { id: string } }) {
     try {
       setIsSubmitting(true);
       
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        toast.error('You must be logged in to edit a post');
+        return;
+      }
+
       const { error } = await supabase
         .from('posts')
         .update({
           title: title.trim(),
           content: content.trim(),
         })
-        .eq('id', params.id)
-        .eq('user_id', localStorage.getItem('userId'));
+        .eq('id', resolvedParams.id)
+        .eq('user_id', session.user.id);
 
       if (error) throw error;
       
-      router.push(`/post/${params.id}`);
+      toast.success('Post updated successfully');
+      router.push(`/post/${resolvedParams.id}`);
     } catch (error) {
       console.error('Error updating post:', error);
+      toast.error('Failed to update post');
     } finally {
       setIsSubmitting(false);
     }
