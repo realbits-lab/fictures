@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import { supabase, type Post } from '@/lib/supabase';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { formatDistanceToNow } from 'date-fns';
-import { Button } from '@/components/ui/button';
-import { Pencil } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
@@ -71,13 +69,6 @@ export default function BlogFeed() {
     }
   };
 
-  const handleEditClick = (e: React.MouseEvent, postId: string) => {
-    e.stopPropagation();
-    if (postId) {
-      router.push(`/post/${encodeURIComponent(postId)}/edit`);
-    }
-  };
-
   if (posts.length === 0 && !loading) {
     return (
       <div className="flex justify-center items-center py-8">
@@ -96,22 +87,9 @@ export default function BlogFeed() {
         >
           <CardHeader className="pb-2">
             <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
-                  Anonymous #{post.user_id.slice(0, 8)}
-                </span>
-                {currentUserId === post.user_id && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2"
-                    onClick={(e) => handleEditClick(e, post.id)}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                    <span className="ml-1">Edit</span>
-                  </Button>
-                )}
-              </div>
+              <span className="text-sm text-muted-foreground">
+                Anonymous #{post.user_id.slice(0, 8)}
+              </span>
               <span className="text-xs text-muted-foreground">
                 {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
               </span>
