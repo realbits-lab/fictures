@@ -23,6 +23,17 @@ const schema = {
       ['height'],
       ['allowfullscreen'],
       ['allow']
+    ],
+    audio: [
+      ['src'],
+      ['controls'],
+      ['preload'],
+      ['class'],
+      ['style']
+    ],
+    source: [
+      ['src'],
+      ['type']
     ]
   },
   tagNames: [
@@ -116,17 +127,21 @@ export default function BlogFeed() {
                       />
                     </div>
                   ),
-                  audio: ({ node, ...props }) => (
-                    <div className="my-4">
-                      <audio
-                        controls
-                        preload="metadata"
-                        style={{ width: '100%' }}
-                        className="rounded-lg shadow-sm"
-                        {...props}
-                      />
-                    </div>
-                  ),
+                  audio: ({ node, ...props }) => {
+                    console.log('BlogFeed - Audio props:', props);
+                    console.log('BlogFeed - Audio src:', props.src);
+                    return (
+                      <div className="my-4">
+                        <audio
+                          controls
+                          preload="metadata"
+                          style={{ width: '100%' }}
+                          className="rounded-lg shadow-sm"
+                          {...props}
+                        />
+                      </div>
+                    );
+                  },
                 }}
               >
                 {post.content}
